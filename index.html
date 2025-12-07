@@ -1,1 +1,443 @@
 
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AvitPlanner — Final (Dashboard & User)</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    
+    <!-- toasts -->
+    <div class="toast-wrapper" id="toasts"></div>
+
+    <!-- Mission modal (admin create/edit) -->
+    <div class="modal-back" id="modalBack">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h3 id="modalTitle">Nouvelle mission</h3>
+
+        <div class="row">
+          <label style="width: 120px; display: flex; align-items: center"
+            >Agence</label
+          >
+          <select id="m-input-agence"></select>
+          <label style="width: 140px; display: flex; align-items: center"
+            >Intérimaire</label
+          >
+          <select id="m-input-interimaire"></select>
+        </div>
+
+        <div class="row">
+          <label style="width: 120px; display: flex; align-items: center"
+            >Date</label
+          >
+          <input id="m-input-date" type="date" />
+          <label style="width: 100px; display: flex; align-items: center"
+            >Début</label
+          >
+          <input id="m-input-debut" type="time" />
+          <label style="width: 80px; display: flex; align-items: center"
+            >Fin</label
+          >
+          <input id="m-input-fin" type="time" />
+        </div>
+
+        <div class="row">
+          <textarea
+            id="m-input-desc"
+            placeholder="Description (ex : Manutention)"
+          ></textarea>
+        </div>
+
+        <div class="timeline" id="modalTimeline" aria-hidden="false">
+          <div
+            class="block proposed"
+            id="timelineProposed"
+            style="left: 0; width: 0"
+          >
+            Proposée
+          </div>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 14px;
+          "
+        >
+          <button class="btn ghost" id="m-cancel">Annuler</button>
+          <button class="btn" id="m-save">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action modal for users -->
+    <div class="modal-back" id="actionModalBack">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h3 id="actionTitle">Action sur la mission</h3>
+
+        <div class="row">
+          <label style="width: 140px; display: flex; align-items: center"
+            >Choix</label
+          >
+          <select id="actionSelect">
+            <option value="CONFIRME">Confirmer</option>
+            <option value="RESERVE">Sous réserve</option>
+            <option value="INDISPONIBLE">Indisponible</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label style="width: 140px; display: flex; align-items: center"
+            >Commentaire</label
+          >
+          <textarea
+            id="actionComment"
+            placeholder="Motif (obligatoire si Indisponible)"
+          ></textarea>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 12px;
+          "
+        >
+          <button class="btn ghost" id="actionCancel">Annuler</button>
+          <button class="btn" id="actionConfirm">Envoyer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- App -->
+    <div class="app" id="appRoot">
+      <aside class="sidebar">
+        <div class="brand">
+          <!-- <div class="logo-round">AP</div> -->
+          <img
+          class="logo"
+          src="avitPlanner.png"
+          alt="Logo Avit Count"
+          />
+          
+          <div>
+            <!-- <h2>AvitPlanner</h2> -->
+            <p>Gestion Intérim</p>
+          </div>
+        </div>
+
+        <nav class="nav" id="mainNav">
+          <a data-view="dashboard" class="active">📊 Dashboard</a>
+          <a data-view="missions">📅 Missions</a>
+          <a data-view="history">🕑 Historique</a>
+          <a data-view="agences">🏢 Agences</a>
+          <a data-view="users">👥 Utilisateurs</a>
+          <a data-view="settings">⚙️ Paramètres</a>
+        </nav>
+
+        <div class="profile" style="margin-top: 16px">
+          <div style="flex: 1">
+            <div style="font-weight: 800" id="profileName">Invité</div>
+            <div
+              style="font-size: 0.85rem; color: var(--muted)"
+              id="profileRole"
+            >
+              Non connecté
+            </div>
+          </div>
+          <div class="avatar" id="sidebarAvatar">--</div>
+        </div>
+
+        <div
+          style="
+            margin-top: 14px;
+            display: flex;
+            gap: 8px;
+            flex-direction: column;
+          "
+        >
+          <button class="btn small" id="loginBtn">Se connecter</button>
+          <button class="btn small ghost" id="logoutBtn" style="display: none">
+            Déconnexion
+          </button>
+          <button class="btn small ghost" id="themeToggle">🌓 Thème</button>
+        </div>
+      </aside>
+
+      <main>
+        <div class="topbar">
+          <div class="searchbar card" style="padding: 8px 10px">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              style="opacity: 0.6"
+            >
+              <path
+                d="M21 21l-4.35-4.35"
+                stroke="#94a3b8"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+              <circle
+                cx="11"
+                cy="11"
+                r="6"
+                stroke="#94a3b8"
+                stroke-width="2.2"
+              ></circle>
+            </svg>
+            <input
+              id="globalSearch"
+              placeholder="Rechercher (intérimaire, description, date)..."
+            />
+          </div>
+          <div class="actions">
+            <button class="btn ghost" id="btnNew">+ Nouvelle</button>
+            <div class="avatar" id="topAvatar">--</div>
+          </div>
+        </div>
+
+        <!-- Dashboard (shown by default at login) -->
+        <section id="view-dashboard" class="card">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: 12px;
+            "
+          >
+            <div>
+              <h3 style="margin: 0" id="dashTitle">Tableau de bord</h3>
+              <div
+                style="color: var(--muted); font-size: 0.95rem"
+                id="dashSubtitle"
+              >
+                Vue synthétique
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center">
+              <div style="text-align: right">
+                <div style="font-weight: 700" id="lastUpdate">—</div>
+                <div style="font-size: 0.85rem; color: var(--muted)">
+                  Dernière mise à jour
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="height: 12px"></div>
+
+          <!-- USER cards (Mission du jour, Prochaine mission, Statut global) or ADMIN cards -->
+          <div id="dashboardCards" class="cards"></div>
+
+          <div style="height: 12px"></div>
+
+          <div class="layout-2cols">
+            <div class="card">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <div>
+                  <h4 style="margin: 0">Missions récentes</h4>
+                  <div style="color: var(--muted); font-size: 0.9rem">
+                    Filtrer et interagir
+                  </div>
+                </div>
+                <div class="filters" style="align-items: center">
+                  <select id="filterStatus">
+                    <option value="ALL">Tous statuts</option>
+                    <option value="ATTENTE">En attente</option>
+                    <option value="CONFIRME">Confirmé</option>
+                    <option value="RESERVE">Sous réserve</option>
+                    <option value="INDISPONIBLE">Indisponible</option>
+                  </select>
+                  <select id="filterInterimaire">
+                    <option value="ALL">Tous intérimaires</option>
+                  </select>
+                  <input id="filterDate" type="date" />
+                  <button class="btn ghost" id="clearFilters">
+                    Réinitialiser
+                  </button>
+                </div>
+              </div>
+              <div class="table-wrap" id="missionsTable"></div>
+
+              <div class="lexique">
+                <h4 style="margin: 8px 0 6px 0">📌 Lexique des couleurs</h4>
+                <div
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                    color: var(--muted);
+                  "
+                >
+                  <div>
+                    <span class="m-small urgent"></span>Moins de 7 jours
+                    (URGENTE)
+                  </div>
+                  <div>
+                    <span class="m-small nextweek"></span>Entre 7 et 14 jours
+                    (Semaine prochaine)
+                  </div>
+                  <div>
+                    <span class="m-small future"></span>Plus de 14 jours (À
+                    venir)
+                  </div>
+                  <div>
+                    <span class="m-small past"></span>Mission passée
+                    (Historique)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <aside class="right-col">
+              <div class="card">
+                <h4 style="margin: 0 0 8px 0">Statistiques</h4>
+                <div
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <div
+                    style="
+                      width: 10px;
+                      height: 10px;
+                      background: var(--success);
+                      border-radius: 3px;
+                    "
+                  ></div>
+                  <div style="color: var(--muted)">Confirmé</div>
+                  <div
+                    style="
+                      width: 10px;
+                      height: 10px;
+                      background: var(--warning);
+                      border-radius: 3px;
+                      margin-left: 12px;
+                    "
+                  ></div>
+                  <div style="color: var(--muted)">En attente</div>
+                </div>
+                <div id="miniChart" style="height: 110px"></div>
+              </div>
+
+              <div class="card">
+                <h4 style="margin: 0 0 8px 0">Agences</h4>
+                <div id="agencesList"></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- Missions tab (future & upcoming) -->
+        <section id="view-missions" class="card" style="display: none">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div>
+              <h3 style="margin: 0">Missions — À venir</h3>
+              <div style="color: var(--muted); font-size: 0.95rem">
+                Filtres et actions
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center">
+              <select id="mFilterStatus">
+                <option value="ALL">Tous</option>
+                <option value="ATTENTE">Attente</option>
+                <option value="CONFIRME">Confirmé</option>
+                <option value="RESERVE">Sous réserve</option>
+                <option value="INDISPONIBLE">Indisponible</option>
+              </select>
+              <input id="mSearch" placeholder="Recherche..." />
+              <button class="btn" id="mAddBtn">Ajouter une mission</button>
+            </div>
+          </div>
+          <div class="table-wrap" id="missionsAdminTable"></div>
+        </section>
+
+        <!-- History tab (missions passed) -->
+        <section id="view-history" class="card" style="display: none">
+          <h3 style="margin: 0 0 8px 0">Historique</h3>
+          <div class="table-wrap" id="historyTable"></div>
+        </section>
+
+        <!-- Agencies admin -->
+        <section id="view-agences" class="card" style="display: none">
+          <h3 style="margin: 0 0 8px 0">Agences</h3>
+          <div
+            style="
+              display: flex;
+              gap: 8px;
+              align-items: center;
+              margin-bottom: 10px;
+            "
+          >
+            <input id="newAgenceName" placeholder="Nom agence" />
+            <input id="newAgenceTel" placeholder="Téléphone" />
+            <button class="btn" id="createAgenceBtn">Créer</button>
+          </div>
+          <div id="agencesAdmin"></div>
+        </section>
+
+        <!-- Users admin -->
+        <section id="view-users" class="card" style="display: none">
+          <h3 style="margin: 0 0 8px 0">Utilisateurs</h3>
+          <div
+            style="
+              display: flex;
+              gap: 8px;
+              align-items: center;
+              margin-bottom: 10px;
+            "
+          >
+            <input id="newUserName" placeholder="Nom complet" />
+            <input id="newUserEmail" placeholder="Email" />
+            <input
+              id="newUserPass"
+              type="password"
+              placeholder="Mot de passe"
+            />
+            <select id="newUserAgence">
+              <option value="">Agence</option>
+            </select>
+            <button class="btn" id="createUserBtn">Créer</button>
+          </div>
+          <div id="usersAdmin"></div>
+        </section>
+
+        <section id="view-settings" class="card" style="display: none">
+          <h3 style="margin: 0 0 8px 0">Paramètres</h3>
+          <p>Options à venir…</p>
+        </section>
+      </main>
+    </div>
+   
+  </body>
+  <script src="app.js"></script>
+</html>
